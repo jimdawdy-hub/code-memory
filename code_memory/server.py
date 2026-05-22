@@ -417,6 +417,9 @@ async def index_codebase(directory: str, ctx: Context, cpu: bool = False) -> api
             # Validate directory
             directory_path = val.validate_directory(directory)
 
+            # Validate that it looks like a code repository
+            val.validate_code_repository(directory_path)
+
             database = db_mod.get_db(str(directory_path))
 
             # Track timing for throughput calculation

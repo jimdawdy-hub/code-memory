@@ -291,3 +291,60 @@ def validate_commit_hash(hash_str: str) -> str:
         )
 
     return sanitized
+
+
+def looks_like_code_repository(directory: Path) -> bool:
+    """Check if a directory looks like a code repository.
+
+    A directory is considered a code repository if it contains:
+    - A .git directory (most reliable indicator), OR
+    - Common source code file extensions
+
+    Args:
+        directory: Path object to check
+
+    Returns:
+        True if directory appears to be a code repository, False otherwise
+    """
+    # Check for .git directory
+    if (directory / ".git").exists():
+        return True
+
+    # Common code file extensions
+    code_extensions = {
+        ".py", ".js", ".ts", ".jsx", ".tsx",  # Python, JavaScript, TypeScript
+        ".java", ".kt", ".scala",  # JVM languages
+        ".go", ".rs",  # Go, Rust
+        ".c", ".cpp", ".cc", ".h", ".hpp",  # C/C++
+        ".cs", ".csx",  # C#
+        ".php", ".rb", ".pl",  # PHP, Ruby, Perl
+        ".swift", ".m", ".mm",  # Swift, Objective-C
+        ".sql", ".xml", ".json", ".yaml", ".yml", ".toml",  # Config/data
+        ".sh", ".bash", ".zsh", ".fish",  # Shell scripts
+    }
+
+    # Check for files with code extensions in the directory tree
+    for file_path in directory.rglob("*"):
+        if file_path.is_file() and file_path.suffix.lower() in code_extensions:
+            return True
+
+    return False
+
+
+def validate_code_repository(directory: Path) -> None:
+    """Validate that the given directory is a code repository.
+
+    Raises:
+        ValidationError: If the directory doesn't appear to be a code repository
+    """
+    if not looks_like_code_repository(directory):
+        raise ValidationError(
+            f"Directory does not appear to be a code repository: {directory}\n\n"
+            "code-memory is designed for indexing source code repositories. "
+            "It did not detect:\n"
+            "  • A .git directory (most reliable indicator)\n"
+            "  • Common source code files (.py, .js, .ts, .go, .rs, .java, etc.)\n\n"
+            "This safeguard prevents accidentally indexing non-code directories "
+            "(like file organization projects) which could consume resources without benefit.",
+            {"directory": str(directory)}
+        )
